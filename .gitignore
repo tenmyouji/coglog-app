@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# Design handoff bundle kept as reference, not part of the app build.
+# (Comment out the next line if you want it tracked in version control.)
+coglog-app-planning

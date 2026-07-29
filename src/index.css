@@ -1,0 +1,39 @@
+/* Global styles ported from the CogLog design handoff (CogLog.dc.html <helmet>). */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #23252a;
+  font-family: 'Space Mono', ui-monospace, monospace;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #f4a400;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #ffbe33;
+}
+
+/* Pulsing dots of the CogLog logo. */
+@keyframes coglogSpin {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

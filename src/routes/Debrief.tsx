@@ -11,9 +11,9 @@ interface DebriefState {
 
 const CONDITION_MEANING: Record<ConditionLabel, string> = {
   Tunnel:
-    'For most trials the target stayed within one small region of the canvas, drawing your attention to narrow onto that area — then on the final trial it jumped elsewhere, testing whether you had tunneled. (See “Learn more” below.)',
+    'For most trials the target stayed within one small region of the canvas, drawing your attention to narrow onto that area. On the final trial it jumped elsewhere, testing whether you had tunneled. (See “Learn more” below.)',
   Random:
-    'Targets appeared anywhere across the canvas on every trial, keeping your search broad — the comparison condition.',
+    'Targets appeared anywhere across the canvas on every trial, keeping your search broad. This is the comparison condition.',
 };
 
 /**
@@ -39,17 +39,21 @@ export function Debrief() {
         <h1 style={S.h1}>About this study</h1>
 
         <p style={S.p}>
-          You just completed <strong style={S.strong}>CogLog</strong>, a visual-search task. You
-          panned and zoomed a large color field to locate a hidden <em>Gabor patch</em> (a small
-          striped circle), clicked it, and judged its orientation — against a timer, with a penalty
-          for wrong answers.
+          You just finished a <strong style={S.strong}>demo run of CogLog</strong>, a research
+          platform used to study attentional tunneling. This walkthrough is meant to show how the
+          real study works; it does not collect or store any data.
+        </p>
+        <p style={S.p}>
+          In the task you panned and zoomed a large color field to find a hidden <em>Gabor patch</em>{' '}
+          (a small striped circle), clicked it, and judged its orientation, against a timer with a
+          penalty for wrong answers.
         </p>
         <p style={S.p}>
           CogLog is built to study <strong style={S.strong}>attentional tunneling</strong>: when we
           concentrate hard on a demanding task, attention can narrow so much that we stop noticing or
-          exploring other parts of a scene. Tasks like this let researchers bring on that state on
-          purpose and develop non-invasive ways to detect it — so that a system could gently
-          intervene before tunneling starts to hurt performance or safety.
+          exploring other parts of a scene. Studies like this bring on that state on purpose and
+          develop non-invasive ways to detect it, so that a system could gently intervene before
+          tunneling starts to hurt performance or safety.
         </p>
 
         {condition && (
@@ -84,10 +88,11 @@ export function Debrief() {
               <p style={S.p}>
                 <strong style={S.strong}>Attentional tunneling</strong> is when someone concentrates
                 so hard on one task or region that they stop scanning for other important information.
-                It's a real risk in safety-critical, multitasking settings — driving, aviation,
-                process control — where missing a signal can be costly. CogLog (first introduced by
-                Kortschot &amp; Jamieson, 2020, and iterated since) is a lab tool that deliberately
-                induces a mild version of this state so it can be studied and, ultimately, detected.
+                It is a real risk in safety-critical, multitasking settings such as driving, aviation,
+                and process control, where missing a signal can be costly. CogLog (first introduced by
+                Kortschot &amp; Jamieson, 2020, and iterated since) is a research platform that
+                deliberately induces a mild version of this state so it can be studied and, ultimately,
+                detected.
               </p>
             </section>
 
@@ -100,14 +105,14 @@ export function Debrief() {
               <p style={S.p}>
                 <strong style={S.strong}>Tunnel (experimental).</strong> During the prime trials the
                 hidden target stays confined to one small region of the canvas. Finding it there over
-                and over draws your attention to narrow and settle on that area — inducing the tunnel.
+                and over draws your attention to narrow and settle on that area, inducing the tunnel.
                 On the final <em>test</em> trial the target is moved to a different region: if your
-                attention has tunneled, you're slower to break away and find it. The number of trials
-                varies between blocks so participants can't count them and anticipate the switch.
+                attention has tunneled, you are slower to break away and find it. The number of trials
+                varies between blocks so participants cannot count them and anticipate the switch.
               </p>
               <p style={S.p}>
                 <strong style={S.strong}>Random (control).</strong> The target appears anywhere on the
-                canvas on every trial — prime and test alike — so attention stays broad. This gives a
+                canvas on every trial, prime and test alike, so attention stays broad. This gives a
                 baseline to compare the tunnel condition against.
               </p>
             </section>
@@ -115,19 +120,33 @@ export function Debrief() {
             <section style={S.section}>
               <h2 style={S.h2}>How it trains a machine-learning model</h2>
               <p style={S.p}>
-                While you play, CogLog <strong style={S.strong}>passively records how you interact</strong> —
+                While you play, CogLog <strong style={S.strong}>passively records how you interact</strong>:
                 mouse movement, scrolling, zooming, where your viewport sits, how much of the canvas is
                 visible, and how long trials and blocks take. This "passive data monitoring" needs no
                 cameras or body sensors.
               </p>
               <p style={S.p}>
-                Each block is labeled by its condition (tunnel vs. not), and rolling time-windows of
-                these signals become training examples for a machine-learning classifier — a{' '}
-                <strong style={S.strong}>Random Forest</strong> (scikit-learn) that learns to tell a
-                tunneled state from a non-tunneled one. Adding richer contextual "trigger" features
-                pushes accuracy past the ~74% baseline of earlier passive approaches. A reliable
-                detector like this could let an <strong style={S.strong}>adaptive system</strong> notice
-                tunneling as it happens and nudge the operator to look wider before it causes an error.
+                Each block is labeled by its condition (tunnel or not), and rolling time-windows of
+                these signals become training examples for a machine-learning classifier.{' '}
+                <strong style={S.strong}>Random Forest</strong> and <strong style={S.strong}>XGBoost</strong>{' '}
+                models (scikit-learn) then learn to tell a tunneled state from a non-tunneled one.
+              </p>
+            </section>
+
+            <section style={S.section}>
+              <h2 style={S.h2}>What the study found</h2>
+              <p style={S.p}>
+                In the thesis this platform supports, the models reached about{' '}
+                <strong style={S.strong}>84% AUC</strong> (a measure of how well they separate tunneled
+                from non-tunneled states), with accuracy around 83 to 86%. That improves on the roughly{' '}
+                <strong style={S.strong}>74%</strong> ceiling of earlier methods that used passive data
+                alone. The gain came from adding richer contextual "trigger" features and from testing
+                on participants the model had never seen, so it has to generalize rather than memorize.
+              </p>
+              <p style={S.p}>
+                The takeaway: non-invasive interaction data can detect attentional tunneling well enough
+                to help an <strong style={S.strong}>adaptive system</strong> notice it in real time and
+                nudge the operator to look wider before it causes an error.
               </p>
               <p style={S.fine}>
                 Based on a study of 45 participants at the University of Toronto (ethics-approved).

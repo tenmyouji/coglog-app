@@ -4,7 +4,7 @@ import { ConfigPanel } from '../coglog/ConfigPanel';
 import { DEFAULT_CONFIG, serializeConfig, type TaskConfig } from '../coglog/config';
 
 /**
- * Launch screen — the participant's entry point. Just the header and the task
+ * Launch screen: the participant's entry point. Just the header and the task
  * options (no live canvas previews). Buttons start the experiment or the
  * tutorial, or copy a pre-configured shareable link.
  */
@@ -30,13 +30,14 @@ export function Launch() {
       <header style={S.header}>
         <div style={S.brandRow}>
           <span style={S.brand}>CogLog</span>
-          <span style={S.tag}>2.1 — VISUAL SEARCH TASK</span>
+          <span style={S.tag}>2.1 · VISUAL SEARCH TASK · DEMO</span>
         </div>
         <p style={S.blurb}>
-          An attentional-tunneling research task. Pan and zoom the color-gradient canvas to find the
-          hidden <strong style={S.strong}>Gabor patch</strong> — it's small, so you'll need to zoom
-          in — click it, then classify its orientation. A wrong answer triggers a penalty. New to it?
-          Start with the tutorial.
+          This is a demo of <strong style={S.strong}>CogLog</strong>, a research platform for studying
+          attentional tunneling. It shows how the study works. Pan and zoom the color-gradient canvas
+          to find the hidden <strong style={S.strong}>Gabor patch</strong> (it is small, so you will
+          need to zoom in), click it, then classify its orientation. A wrong answer triggers a penalty.
+          New to it? Start with the tutorial.
         </p>
       </header>
 

@@ -1,9 +1,9 @@
-/* CogLog 2.1 engine — imperative interactive core (TypeScript port).
+/* CogLog 2.1 engine: imperative interactive core (TypeScript port).
    Renders a pan/zoom color-gradient canvas with a hidden Gabor-patch target,
    minimap viewport indicator, orientation classification, penalty + trial flow.
 
    Ported verbatim from the design handoff (coglog-engine.js) so the visual
-   output is pixel-identical — the math, constants and layout rules are
+   output is pixel-identical: the math, constants and layout rules are
    unchanged. A canvas game is inherently imperative, so we keep the engine as
    a plain class and let React own only its mount/update/teardown lifecycle
    (see CogLog.tsx). createCogLog(root, opts) -> Engine instance. */
@@ -48,10 +48,10 @@ interface TutStep {
 }
 const TUTORIAL_STEPS: TutStep[] = [
   { text: 'Drag anywhere to pan around the canvas.', trigger: 'pan' },
-  { text: 'Scroll or pinch to zoom in — the Gabor patch is tiny.', trigger: 'zoom' },
+  { text: 'Scroll or pinch to zoom in. The Gabor patch is tiny.', trigger: 'zoom' },
   { text: 'Find the patch (a small striped circle) and click it.', trigger: 'find' },
   { text: 'Now classify its orientation using the panel.', trigger: 'answer' },
-  { text: "That's the whole task. Start the real experiment when you're ready.", trigger: null },
+  { text: "That's the whole task. Start the demo when you're ready.", trigger: null },
 ];
 
 type StyleInput = Partial<CSSStyleDeclaration> & Record<string, string>;
@@ -405,7 +405,7 @@ export class Engine {
     );
     this.penaltyBig = el('div', { fontSize: '44px', fontWeight: '700', color: '#ff6b6b' }, this.penalty);
     this.penaltyMsg = el('div', { fontSize: '12px', letterSpacing: '0.12em', opacity: '0.85' }, this.penalty);
-    this.penaltyMsg.textContent = 'INCORRECT — PENALTY';
+    this.penaltyMsg.textContent = 'INCORRECT · PENALTY';
 
     // complete overlay
     this.complete = el(

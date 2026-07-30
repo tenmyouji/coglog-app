@@ -5,7 +5,7 @@ export type VariantParam = 'auto' | 'desktop' | 'mobile';
 
 /**
  * Task configuration the participant can set on the launch screen.
- * Note: `condition` (Tunnel vs Random) is intentionally NOT here — it is
+ * Note: `condition` (Tunnel vs Random) is intentionally NOT here; it is
  * randomly assigned per run and hidden until the debrief.
  */
 export interface TaskConfig {

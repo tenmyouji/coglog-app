@@ -27,7 +27,32 @@ export interface EngineOpts {
   targetSize: number;
   condition: Condition;
   showHud: boolean;
+  /** Guided-tooltip walkthrough instead of a scored block. */
+  tutorial?: boolean;
+  /** Fired by the in-task "Back" button. */
+  onExit?: () => void;
+  /** Fired when a scored block finishes (not fired in tutorial mode). */
+  onComplete?: (result: CompleteResult) => void;
 }
+
+export interface CompleteResult {
+  correct: number;
+  answered: number;
+  trials: number;
+}
+
+type TutTrigger = 'pan' | 'zoom' | 'find' | 'answer' | null;
+interface TutStep {
+  text: string;
+  trigger: TutTrigger;
+}
+const TUTORIAL_STEPS: TutStep[] = [
+  { text: 'Drag anywhere to pan around the canvas.', trigger: 'pan' },
+  { text: 'Scroll or pinch to zoom in — the Gabor patch is tiny.', trigger: 'zoom' },
+  { text: 'Find the patch (a small striped circle) and click it.', trigger: 'find' },
+  { text: 'Now classify its orientation using the panel.', trigger: 'answer' },
+  { text: "That's the whole task. Start the real experiment when you're ready.", trigger: null },
+];
 
 type StyleInput = Partial<CSSStyleDeclaration> & Record<string, string>;
 
@@ -177,6 +202,13 @@ export class Engine {
   private penaltyBig!: HTMLDivElement;
   private penaltyMsg!: HTMLDivElement;
   private complete!: HTMLDivElement;
+  private controls!: HTMLDivElement;
+  private hudBtn!: HTMLButtonElement;
+  private backBtn!: HTMLButtonElement;
+  private tip!: HTMLDivElement;
+  private tipText!: HTMLDivElement;
+  private tipBtn!: HTMLButtonElement;
+  private _tutStep = 0;
 
   private scale!: number;
   private minScale!: number;
@@ -212,6 +244,7 @@ export class Engine {
         targetSize: 46,
         condition: 'random' as Condition,
         showHud: true,
+        tutorial: false,
       },
       opts || {},
     );
@@ -385,6 +418,54 @@ export class Engine {
       r,
     );
 
+    // right-bar controls: back + HUD toggle
+    this.controls = el('div', { position: 'absolute', zIndex: '9', display: 'flex' }, r);
+    const ctrlStyle: StyleInput = {
+      background: 'rgba(20,20,20,0.55)', border: '1px solid rgba(255,255,255,0.18)',
+      color: 'rgba(255,255,255,0.82)', fontFamily: "'Space Mono', monospace", fontSize: '10px',
+      letterSpacing: '0.08em', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer',
+      whiteSpace: 'nowrap',
+    };
+    this.hudBtn = el('button', ctrlStyle, this.controls);
+    this.hudBtn.textContent = 'HIDE HUD';
+    this.hudBtn.addEventListener('click', function () {
+      self.opts.showHud = !self.opts.showHud;
+      self.hudBtn.textContent = self.opts.showHud ? 'HIDE HUD' : 'SHOW HUD';
+      self._render();
+    });
+    this.backBtn = el('button', ctrlStyle, this.controls);
+    this.backBtn.textContent = '← BACK';
+    this.backBtn.addEventListener('click', function () {
+      if (self.opts.onExit) self.opts.onExit();
+    });
+
+    // tutorial tooltip (top-center), shown only in tutorial mode
+    this.tip = el(
+      'div',
+      {
+        position: 'absolute', zIndex: '15', display: 'none', left: '50%', top: '18px',
+        transform: 'translateX(-50%)', maxWidth: '78%', background: 'rgba(18,18,18,0.92)',
+        border: '1px solid rgba(244,164,0,0.55)', borderRadius: '10px', padding: '10px 14px',
+        color: '#fff', fontSize: '12px', letterSpacing: '0.03em', lineHeight: '1.5',
+        textAlign: 'center', boxShadow: '0 6px 22px rgba(0,0,0,0.45)',
+      },
+      r,
+    );
+    this.tipText = el('div', {}, this.tip);
+    this.tipBtn = el(
+      'button',
+      {
+        marginTop: '9px', display: 'none', padding: '7px 16px', border: 'none', borderRadius: '8px',
+        background: AMBER, color: '#3a2b00', fontWeight: '700', cursor: 'pointer',
+        fontFamily: "'Space Mono', monospace", fontSize: '11px', letterSpacing: '0.06em',
+      },
+      this.tip,
+    );
+    this.tipBtn.textContent = 'FINISH ↗';
+    this.tipBtn.addEventListener('click', function () {
+      if (self.opts.onExit) self.opts.onExit();
+    });
+
     // pointer handlers
     this.canvas.addEventListener('pointerdown', this._onDown.bind(this));
     this.canvas.addEventListener('pointermove', this._onMove.bind(this));
@@ -394,11 +475,37 @@ export class Engine {
     this._touches = {};
   }
 
+  /* ---- tutorial ---- */
+  private _tut(kind: Exclude<TutTrigger, null>): void {
+    if (!this.opts.tutorial) return;
+    const step = TUTORIAL_STEPS[this._tutStep];
+    if (step && step.trigger === kind) {
+      this._tutStep++;
+      this._tutShow();
+    }
+  }
+  private _tutShow(): void {
+    if (!this.opts.tutorial) {
+      this.tip.style.display = 'none';
+      return;
+    }
+    const step = TUTORIAL_STEPS[this._tutStep];
+    if (!step) {
+      this.tip.style.display = 'none';
+      return;
+    }
+    this.tipText.textContent = step.text;
+    this.tipBtn.style.display = step.trigger === null ? 'inline-block' : 'none';
+    this.tip.style.display = 'block';
+  }
+
   private _resetSession(): void {
     this.state.trial = 0;
     this.state.correct = 0;
     this.state.answered = 0;
     this.complete.style.display = 'none';
+    this._tutStep = 0;
+    this._tutShow();
     this._fit();
     this._newTrial();
   }
@@ -430,6 +537,16 @@ export class Engine {
   }
 
   private _finish(): void {
+    // In the participant flow, React routes to the debrief page. The built-in
+    // overlay is only the fallback when no onComplete handler is wired.
+    if (this.opts.onComplete) {
+      this.opts.onComplete({
+        correct: this.state.correct,
+        answered: this.state.answered,
+        trials: this.opts.trials,
+      });
+      return;
+    }
     const acc = this.state.answered ? Math.round((this.state.correct / this.state.answered) * 100) : 0;
     this.complete.innerHTML = '';
     const t = el(
@@ -495,6 +612,7 @@ export class Engine {
     this.oy = wy - (fy * ch) / this.scale;
     this._clampView();
     this._render();
+    this._tut('zoom');
   }
 
   /* ---- input ---- */
@@ -533,6 +651,7 @@ export class Engine {
       const dx = e.clientX - this._drag.sx;
       const dy = e.clientY - this._drag.sy;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) this._drag.moved = true;
+      if (this._drag.moved) this._tut('pan');
       this.ox = this._drag.ox - dx / this.scale;
       this.oy = this._drag.oy - dy / this.scale;
       this._clampView();
@@ -577,6 +696,7 @@ export class Engine {
     const r = Math.max(this.opts.targetSize * 0.9, 16 / this.scale);
     if (Math.hypot(wx - this.state.tx, wy - this.state.ty) <= r) {
       this.state.found = true;
+      this._tut('find');
       this._updatePanel();
       this._render();
     }
@@ -585,6 +705,7 @@ export class Engine {
   private _answer(choice: Orient, radio: HTMLSpanElement): void {
     if (!this.state.found || this._penaltyActive) return;
     this.state.answered++;
+    this._tut('answer');
     // clear radios then fill chosen
     const self = this;
     Object.keys(this.optBtns).forEach(function (k) {
@@ -674,6 +795,13 @@ export class Engine {
       Object.assign(this.mini.style, { right: pad + 'px', bottom: botH + 6 + 'px', top: 'auto', left: 'auto' });
       this._mm = { w: mmW, h: mmH };
       Object.assign(this.hud.style, { left: pad + 4 + 'px', top: '14px', fontSize: '10px' });
+      // controls: compact row top-right (opposite the logo)
+      Object.assign(this.controls.style, {
+        right: pad + 'px', top: '12px', left: 'auto', bottom: 'auto',
+        flexDirection: 'row', gap: '6px', width: 'auto',
+      } as StyleInput);
+      this.hudBtn.style.flex = '0 0 auto';
+      this.backBtn.style.flex = '0 0 auto';
     } else {
       const sideW = 156;
       cRect = { x: pad, y: pad, w: W - sideW - pad * 3, h: H - pad * 2 };
@@ -691,6 +819,13 @@ export class Engine {
       Object.assign(this.mini.style, { left: sideX + 'px', bottom: pad + 'px', top: 'auto', right: 'auto' });
       this._mm = { w: mmW2, h: mmH2 };
       Object.assign(this.hud.style, { left: pad + 10 + 'px', top: pad + 6 + 'px', fontSize: '11px' });
+      // controls: row sitting just above the minimap in the right bar
+      Object.assign(this.controls.style, {
+        left: sideX + 'px', bottom: pad + mmH2 + 10 + 'px', top: 'auto', right: 'auto',
+        width: sideW + 'px', flexDirection: 'row', gap: '6px',
+      } as StyleInput);
+      this.hudBtn.style.flex = '1';
+      this.backBtn.style.flex = '1';
     }
 
     // size canvas

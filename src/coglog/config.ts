@@ -3,10 +3,13 @@ import type { Difficulty } from './CogLog';
 export type ConditionLabel = 'Random' | 'Tunnel';
 export type VariantParam = 'auto' | 'desktop' | 'mobile';
 
-/** Task configuration shared by the showcase panel and the /experiment route. */
+/**
+ * Task configuration the participant can set on the launch screen.
+ * Note: `condition` (Tunnel vs Random) is intentionally NOT here — it is
+ * randomly assigned per run and hidden until the debrief.
+ */
 export interface TaskConfig {
   difficulty: Difficulty;
-  condition: ConditionLabel;
   trials: number;
   penaltySeconds: number;
   showHud: boolean;
@@ -14,7 +17,6 @@ export interface TaskConfig {
 
 export const DEFAULT_CONFIG: TaskConfig = {
   difficulty: 'Hard',
-  condition: 'Random',
   trials: 15,
   penaltySeconds: 15,
   showHud: true,
@@ -22,6 +24,11 @@ export const DEFAULT_CONFIG: TaskConfig = {
 
 export const DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard'];
 export const CONDITIONS: ConditionLabel[] = ['Random', 'Tunnel'];
+
+/** Randomly assign a between-subjects condition (50/50). */
+export function randomCondition(): ConditionLabel {
+  return Math.random() < 0.5 ? 'Tunnel' : 'Random';
+}
 
 // Bounds mirror the design's prop schema (CogLog.dc.html data-props).
 export const TRIALS_RANGE = { min: 3, max: 40 } as const;
@@ -43,7 +50,6 @@ function oneOf<T extends string>(v: string | null, allowed: readonly T[], fallba
 export function parseConfig(params: URLSearchParams): TaskConfig & { variant: VariantParam } {
   return {
     difficulty: oneOf(params.get('difficulty'), DIFFICULTIES, DEFAULT_CONFIG.difficulty),
-    condition: oneOf(params.get('condition'), CONDITIONS, DEFAULT_CONFIG.condition),
     trials: clampInt(params.get('trials'), TRIALS_RANGE.min, TRIALS_RANGE.max, DEFAULT_CONFIG.trials),
     penaltySeconds: clampInt(
       params.get('penaltySeconds'),
@@ -60,7 +66,6 @@ export function parseConfig(params: URLSearchParams): TaskConfig & { variant: Va
 export function serializeConfig(cfg: TaskConfig, variant: VariantParam = 'auto'): string {
   const p = new URLSearchParams();
   if (cfg.difficulty !== DEFAULT_CONFIG.difficulty) p.set('difficulty', cfg.difficulty);
-  if (cfg.condition !== DEFAULT_CONFIG.condition) p.set('condition', cfg.condition);
   if (cfg.trials !== DEFAULT_CONFIG.trials) p.set('trials', String(cfg.trials));
   if (cfg.penaltySeconds !== DEFAULT_CONFIG.penaltySeconds) p.set('penaltySeconds', String(cfg.penaltySeconds));
   if (cfg.showHud !== DEFAULT_CONFIG.showHud) p.set('showHud', String(cfg.showHud));

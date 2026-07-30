@@ -1,57 +1,47 @@
-import { useState, type CSSProperties } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CogLog } from '../coglog/CogLog';
-import { parseConfig } from '../coglog/config';
+import { parseConfig, randomCondition, type ConditionLabel } from '../coglog/config';
+
+interface Props {
+  /** Guided walkthrough: forces the Random condition and skips the debrief. */
+  tutorial?: boolean;
+}
 
 /**
- * Fullscreen experiment route. Reads task configuration from the URL query
- * string (see coglog/config.ts), so a researcher can hand a participant a
- * single pre-configured link, e.g. /experiment?difficulty=Hard&trials=20.
+ * Fullscreen task route. Task settings come from the URL query string
+ * (see coglog/config.ts); the condition is assigned randomly per run and kept
+ * out of the URL so the participant stays blind to it until the debrief.
+ * Back / Hide-HUD controls live inside the engine's right bar.
  */
-export function Experiment() {
+export function Experiment({ tutorial = false }: Props) {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const cfg = parseConfig(params);
+  const [condition] = useState<ConditionLabel>(() => (tutorial ? 'Random' : randomCondition()));
   const variant = cfg.variant === 'auto' ? undefined : cfg.variant;
-  const [hidden, setHidden] = useState(false);
 
   return (
-    <div style={S.wrap}>
+    <div style={{ position: 'fixed', inset: 0, background: '#636363' }}>
       <CogLog
         variant={variant}
         difficulty={cfg.difficulty}
-        condition={cfg.condition}
+        condition={condition}
         trials={cfg.trials}
         penaltySeconds={cfg.penaltySeconds}
         showHud={cfg.showHud}
+        tutorial={tutorial}
+        onExit={() => navigate('/')}
+        onComplete={
+          tutorial
+            ? undefined
+            : (r) =>
+                navigate('/debrief', {
+                  state: { ...r, condition, difficulty: cfg.difficulty },
+                })
+        }
         style={{ borderRadius: 0 }}
       />
-      {!hidden && (
-        <div style={S.controls}>
-          <Link to="/" style={S.btn}>
-            ← BACK
-          </Link>
-          <button style={S.btn} onClick={() => setHidden(true)}>
-            HIDE
-          </button>
-        </div>
-      )}
     </div>
   );
 }
-
-const S: Record<string, CSSProperties> = {
-  wrap: { position: 'fixed', inset: 0, background: '#636363' },
-  controls: { position: 'absolute', left: 16, bottom: 16, zIndex: 30, display: 'flex', gap: 8 },
-  btn: {
-    background: 'rgba(20,20,20,0.6)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    color: 'rgba(255,255,255,0.8)',
-    fontFamily: "'Space Mono', monospace",
-    fontSize: 11,
-    letterSpacing: '0.1em',
-    padding: '7px 12px',
-    borderRadius: 8,
-    cursor: 'pointer',
-    textDecoration: 'none',
-  },
-};

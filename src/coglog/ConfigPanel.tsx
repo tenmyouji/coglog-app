@@ -1,12 +1,5 @@
 import type { CSSProperties } from 'react';
-import {
-  CONDITIONS,
-  DIFFICULTIES,
-  PENALTY_RANGE,
-  TRIALS_RANGE,
-  type ConditionLabel,
-  type TaskConfig,
-} from './config';
+import { DIFFICULTIES, PENALTY_RANGE, TRIALS_RANGE, type TaskConfig } from './config';
 import type { Difficulty } from './CogLog';
 
 interface Props {
@@ -33,21 +26,6 @@ export function ConfigPanel({ config, onChange }: Props) {
               onClick={() => set('difficulty', d as Difficulty)}
             >
               {d}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={S.field}>
-        <label style={S.label}>Target placement</label>
-        <div style={S.segment}>
-          {CONDITIONS.map((c) => (
-            <button
-              key={c}
-              style={seg(config.condition === c)}
-              onClick={() => set('condition', c as ConditionLabel)}
-            >
-              {c}
             </button>
           ))}
         </div>

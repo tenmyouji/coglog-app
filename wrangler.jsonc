@@ -1,0 +1,13 @@
+{
+  // Static-assets Worker for the CogLog demo. Explicit config so `wrangler deploy`
+  // uploads the built `dist/` directory directly, instead of trying to auto-configure
+  // the Cloudflare Vite plugin (which requires Vite 6+; this project uses Vite 5).
+  "name": "coglog-demo",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html (200) for unmatched routes so the client-side router
+    // handles /experiment, /tutorial and /debrief on refresh / direct load.
+    "not_found_handling": "single-page-application"
+  }
+}

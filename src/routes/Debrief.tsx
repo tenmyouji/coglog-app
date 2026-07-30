@@ -11,7 +11,7 @@ interface DebriefState {
 
 const CONDITION_MEANING: Record<ConditionLabel, string> = {
   Tunnel:
-    'For most trials the target stayed within one small region of the canvas, drawing your attention to narrow onto that area — then on the final trial it jumped elsewhere, testing whether you had tunneled. (See “Read more” below.)',
+    'For most trials the target stayed within one small region of the canvas, drawing your attention to narrow onto that area — then on the final trial it jumped elsewhere, testing whether you had tunneled. (See “Learn more” below.)',
   Random:
     'Targets appeared anywhere across the canvas on every trial, keeping your search broad — the comparison condition.',
 };
@@ -74,7 +74,7 @@ export function Debrief() {
         )}
 
         <button style={S.readMore} onClick={() => setExpanded((v) => !v)}>
-          {expanded ? 'Show less ▴' : 'Read more ▾'}
+          {expanded ? 'Show less ▴' : 'Learn more ▾'}
         </button>
 
         {expanded && (

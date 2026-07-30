@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.1.0",
   "type": "module",
-  "description": "CogLog 2.1 — attentional-tunneling visual search task (React port of the Claude Design handoff).",
+  "description": "CogLog 2.1: attentional-tunneling visual search task (React port of the Claude Design handoff).",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

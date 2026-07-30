@@ -151,6 +151,14 @@ export function Debrief() {
               <p style={S.fine}>
                 Based on a study of 45 participants at the University of Toronto (ethics-approved).
               </p>
+              <a
+                style={S.paperLink}
+                href="https://www.proquest.com/docview/3234930029?pq-origsite=gscholar&fromopenview=true&sourcetype=Dissertations%20&%20Theses"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Read the full thesis for the experiment and results ↗
+              </a>
             </section>
           </div>
         )}
@@ -262,6 +270,14 @@ const S: Record<string, CSSProperties> = {
     textTransform: 'uppercase',
   },
   fine: { margin: 0, color: 'rgba(255,255,255,0.45)', fontSize: 11.5, fontStyle: 'italic' },
+  paperLink: {
+    color: '#f4a400',
+    fontSize: 12.5,
+    letterSpacing: '0.02em',
+    fontWeight: 700,
+    textDecoration: 'underline',
+    textUnderlineOffset: 3,
+  },
   actions: { display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' },
   secondary: {
     padding: '11px 16px',

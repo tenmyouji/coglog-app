@@ -14,6 +14,8 @@ const RED = '#8e1b1b';
 const WORLD_W = 2400;
 const WORLD_H = 1500;
 const ORIENTS = ['horizontal', 'vertical', 'diagonal'] as const;
+// If the target isn't found within this long, offer a "skip to debrief" escape.
+const SKIP_AFTER_MS = 180000; // 3 minutes
 
 export type Orient = (typeof ORIENTS)[number];
 export type Variant = 'desktop' | 'mobile';
@@ -208,6 +210,9 @@ export class Engine {
   private tip!: HTMLDivElement;
   private tipText!: HTMLDivElement;
   private tipBtn!: HTMLButtonElement;
+  private skip!: HTMLDivElement;
+  private skipBtn!: HTMLButtonElement;
+  private _skipTimer?: ReturnType<typeof setTimeout>;
   private _tutStep = 0;
 
   private scale!: number;
@@ -427,7 +432,7 @@ export class Engine {
       whiteSpace: 'nowrap',
     };
     this.hudBtn = el('button', ctrlStyle, this.controls);
-    this.hudBtn.textContent = 'HIDE HUD';
+    this.hudBtn.textContent = this.opts.showHud ? 'HIDE HUD' : 'SHOW HUD';
     this.hudBtn.addEventListener('click', function () {
       self.opts.showHud = !self.opts.showHud;
       self.hudBtn.textContent = self.opts.showHud ? 'HIDE HUD' : 'SHOW HUD';
@@ -466,6 +471,38 @@ export class Engine {
       if (self.opts.onExit) self.opts.onExit();
     });
 
+    // "skip to debrief" escape hatch, fades in after SKIP_AFTER_MS without a find
+    this.skip = el(
+      'div',
+      {
+        position: 'absolute', zIndex: '10', display: 'none', opacity: '0',
+        flexDirection: 'column', gap: '7px', alignItems: 'stretch',
+      },
+      r,
+    );
+    const skipHint = el(
+      'div',
+      {
+        color: 'rgba(255,255,255,0.6)', fontSize: '10px', letterSpacing: '0.06em',
+        lineHeight: '1.4', textAlign: 'center',
+      },
+      this.skip,
+    );
+    skipHint.textContent = "Can't find the target?";
+    this.skipBtn = el(
+      'button',
+      {
+        padding: '9px 10px', borderRadius: '8px', border: '1px solid rgba(244,164,0,0.6)',
+        background: 'rgba(244,164,0,0.12)', color: AMBER, fontFamily: "'Space Mono', monospace",
+        fontSize: '10px', letterSpacing: '0.08em', fontWeight: '700', cursor: 'pointer',
+      },
+      this.skip,
+    );
+    this.skipBtn.textContent = 'SKIP TO DEBRIEF →';
+    this.skipBtn.addEventListener('click', function () {
+      self._skipToDebrief();
+    });
+
     // pointer handlers
     this.canvas.addEventListener('pointerdown', this._onDown.bind(this));
     this.canvas.addEventListener('pointermove', this._onMove.bind(this));
@@ -499,6 +536,51 @@ export class Engine {
     this.tip.style.display = 'block';
   }
 
+  /* ---- skip-to-debrief escape hatch ---- */
+  private _clearSkipTimer(): void {
+    if (this._skipTimer) {
+      clearTimeout(this._skipTimer);
+      this._skipTimer = undefined;
+    }
+  }
+  private _armSkipTimer(): void {
+    this._clearSkipTimer();
+    // hide any previous prompt without animating
+    this.skip.style.transition = 'none';
+    this.skip.style.opacity = '0';
+    this.skip.style.display = 'none';
+    if (this.opts.tutorial) return; // no skip in the tutorial
+    const self = this;
+    this._skipTimer = setTimeout(function () {
+      self._showSkip();
+    }, SKIP_AFTER_MS);
+  }
+  private _showSkip(): void {
+    if (this.state.found) return; // already found; nothing to skip
+    this.skip.style.display = 'flex';
+    void this.skip.offsetHeight; // force reflow so the transition runs
+    this.skip.style.transition = 'opacity 3s ease';
+    this.skip.style.opacity = '1';
+  }
+  private _hideSkip(): void {
+    this._clearSkipTimer();
+    this.skip.style.transition = 'none';
+    this.skip.style.opacity = '0';
+    this.skip.style.display = 'none';
+  }
+  private _skipToDebrief(): void {
+    this._hideSkip();
+    if (this.opts.onComplete) {
+      this.opts.onComplete({
+        correct: this.state.correct,
+        answered: this.state.answered,
+        trials: this.opts.trials,
+      });
+    } else if (this.opts.onExit) {
+      this.opts.onExit();
+    }
+  }
+
   private _resetSession(): void {
     this.state.trial = 0;
     this.state.correct = 0;
@@ -506,6 +588,7 @@ export class Engine {
     this.complete.style.display = 'none';
     this._tutStep = 0;
     this._tutShow();
+    this._hideSkip();
     this._fit();
     this._newTrial();
   }
@@ -532,11 +615,13 @@ export class Engine {
     this.state.ty = py;
     this.state.gabor = makeGabor(160, this.state.orient, this.opts.contrast);
     this.state.trialStart = performance.now();
+    this._armSkipTimer();
     this._updatePanel();
     this._render();
   }
 
   private _finish(): void {
+    this._clearSkipTimer();
     // In the participant flow, React routes to the debrief page. The built-in
     // overlay is only the fallback when no onComplete handler is wired.
     if (this.opts.onComplete) {
@@ -696,6 +781,7 @@ export class Engine {
     const r = Math.max(this.opts.targetSize * 0.9, 16 / this.scale);
     if (Math.hypot(wx - this.state.tx, wy - this.state.ty) <= r) {
       this.state.found = true;
+      this._hideSkip();
       this._tut('find');
       this._updatePanel();
       this._render();
@@ -794,7 +880,9 @@ export class Engine {
       const mmH = 74;
       Object.assign(this.mini.style, { right: pad + 'px', bottom: botH + 6 + 'px', top: 'auto', left: 'auto' });
       this._mm = { w: mmW, h: mmH };
-      Object.assign(this.hud.style, { left: pad + 4 + 'px', top: '14px', fontSize: '10px' });
+      // HUD overlays the top-left of the canvas (below the logo strip) so it
+      // doesn't collide with the logo, which owns the top-left on mobile.
+      Object.assign(this.hud.style, { left: pad + 4 + 'px', top: topH + 8 + 'px', fontSize: '10px' });
       // controls: compact row top-right (opposite the logo)
       Object.assign(this.controls.style, {
         right: pad + 'px', top: '12px', left: 'auto', bottom: 'auto',
@@ -802,6 +890,11 @@ export class Engine {
       } as StyleInput);
       this.hudBtn.style.flex = '0 0 auto';
       this.backBtn.style.flex = '0 0 auto';
+      // skip prompt: centered, above the bottom panel bar
+      Object.assign(this.skip.style, {
+        left: pad + 'px', right: pad + 'px', bottom: botH + mmH + 26 + 'px',
+        top: 'auto', width: 'auto', alignItems: 'center',
+      } as StyleInput);
     } else {
       const sideW = 156;
       cRect = { x: pad, y: pad, w: W - sideW - pad * 3, h: H - pad * 2 };
@@ -826,6 +919,11 @@ export class Engine {
       } as StyleInput);
       this.hudBtn.style.flex = '1';
       this.backBtn.style.flex = '1';
+      // skip prompt: in the right sidebar, below the orientation panel
+      Object.assign(this.skip.style, {
+        left: sideX + 'px', top: pad + 66 + 176 + 'px', bottom: 'auto', right: 'auto',
+        width: sideW + 'px', alignItems: 'stretch',
+      } as StyleInput);
     }
 
     // size canvas
@@ -938,6 +1036,8 @@ export class Engine {
   }
 
   private _renderHud(): void {
+    // Keep the toggle label in sync with the current HUD state.
+    this.hudBtn.textContent = this.opts.showHud ? 'HIDE HUD' : 'SHOW HUD';
     if (this.opts.showHud === false) {
       this.hud.style.display = 'none';
       return;
@@ -964,6 +1064,7 @@ export class Engine {
   destroy(): void {
     if (this._ro) this._ro.disconnect();
     if (this._penTimer) clearInterval(this._penTimer);
+    this._clearSkipTimer();
     window.removeEventListener('pointerup', this._onUpBound);
     this.root.innerHTML = '';
   }

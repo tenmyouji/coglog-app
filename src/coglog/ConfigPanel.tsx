@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
-import { DIFFICULTIES, PENALTY_RANGE, TRIALS_RANGE, type TaskConfig } from './config';
-import type { Difficulty } from './CogLog';
+import { PENALTY_RANGE, TRIALS_RANGE, type TaskConfig } from './config';
 
 interface Props {
   config: TaskConfig;
@@ -15,21 +14,6 @@ export function ConfigPanel({ config, onChange }: Props) {
   return (
     <div style={S.panel}>
       <div style={S.title}>TASK CONFIG</div>
-
-      <div style={S.field}>
-        <label style={S.label}>Difficulty</label>
-        <div style={S.segment}>
-          {DIFFICULTIES.map((d) => (
-            <button
-              key={d}
-              style={seg(config.difficulty === d)}
-              onClick={() => set('difficulty', d as Difficulty)}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div style={S.field}>
         <label style={S.label}>
@@ -67,23 +51,6 @@ export function ConfigPanel({ config, onChange }: Props) {
   );
 }
 
-function seg(active: boolean): CSSProperties {
-  return {
-    flex: 1,
-    padding: '7px 4px',
-    fontFamily: "'Space Mono', monospace",
-    fontSize: 11,
-    letterSpacing: '0.06em',
-    cursor: 'pointer',
-    border: 'none',
-    borderRadius: 7,
-    background: active ? '#f4a400' : 'rgba(255,255,255,0.06)',
-    color: active ? '#3a2b00' : 'rgba(255,255,255,0.7)',
-    fontWeight: active ? 700 : 400,
-    transition: 'background .12s, color .12s',
-  };
-}
-
 const S: Record<string, CSSProperties> = {
   panel: {
     display: 'flex',
@@ -109,7 +76,6 @@ const S: Record<string, CSSProperties> = {
     justifyContent: 'space-between',
   },
   value: { color: '#f4a400', fontWeight: 700 },
-  segment: { display: 'flex', gap: 6 },
   range: { width: '100%', accentColor: '#f4a400', cursor: 'pointer' },
   toggle: {
     display: 'flex',

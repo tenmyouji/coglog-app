@@ -11,6 +11,7 @@ import { DEFAULT_CONFIG, serializeConfig, type TaskConfig } from '../coglog/conf
 export function Launch() {
   const [config, setConfig] = useState<TaskConfig>(DEFAULT_CONFIG);
   const [copied, setCopied] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
 
   const qs = serializeConfig(config);
   const expHref = qs ? `/experiment?${qs}` : '/experiment';
@@ -42,7 +43,6 @@ export function Launch() {
       </header>
 
       <div style={S.center}>
-        <ConfigPanel config={config} onChange={setConfig} />
         <div style={S.launchBox}>
           <Link to={expHref} style={S.primary}>
             LAUNCH EXPERIMENT →
@@ -54,6 +54,11 @@ export function Launch() {
             {copied ? '✓ LINK COPIED' : 'COPY SHAREABLE LINK'}
           </button>
         </div>
+
+        <button style={S.settingsToggle} onClick={() => setShowConfig((v) => !v)}>
+          {showConfig ? 'TASK SETTINGS ▴' : 'TASK SETTINGS ▾'}
+        </button>
+        {showConfig && <ConfigPanel config={config} onChange={setConfig} />}
       </div>
     </div>
   );
@@ -88,6 +93,18 @@ const S: Record<string, CSSProperties> = {
   },
   center: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: 260 },
   launchBox: { display: 'flex', flexDirection: 'column', gap: 8, width: 260 },
+  settingsToggle: {
+    marginTop: 2,
+    padding: '7px 12px',
+    borderRadius: 8,
+    background: 'transparent',
+    border: 'none',
+    color: 'rgba(255,255,255,0.45)',
+    fontFamily: "'Space Mono', monospace",
+    fontSize: 10.5,
+    letterSpacing: '0.14em',
+    cursor: 'pointer',
+  },
   primary: {
     textAlign: 'center',
     padding: '13px 14px',

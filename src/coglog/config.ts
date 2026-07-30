@@ -19,7 +19,7 @@ export const DEFAULT_CONFIG: TaskConfig = {
   difficulty: 'Hard',
   trials: 15,
   penaltySeconds: 15,
-  showHud: true,
+  showHud: false,
 };
 
 export const DIFFICULTIES: Difficulty[] = ['Easy', 'Medium', 'Hard'];
